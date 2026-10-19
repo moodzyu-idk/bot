@@ -5,45 +5,70 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>MiniMario - Pixel Rabbit</title>
     <style>
+        * { box-sizing: border-box; }
+        
         body {
             margin: 0; padding: 0;
             background-color: #222;
             display: flex; flex-direction: column;
             align-items: center; justify-content: center;
-            height: 100vh;
+            height: 100vh; width: 100vw;
             font-family: 'Courier New', Courier, monospace;
             overflow: hidden; touch-action: none;
             user-select: none;
         }
-        .canvas-container { position: relative; }
-        canvas {
-            background: linear-gradient(to bottom, #87CEEB 0%, #fecfef 100%); /* Langit biru ke pink */
-            border: 4px solid #333; border-radius: 8px;
-            max-width: 100vw; max-height: 60vh;
-            image-rendering: pixelated; display: block;
+
+        /* Wadah Canvas biar proporsional */
+        .canvas-container { 
+            position: relative; 
+            width: 100%; 
+            max-width: 600px;
+            display: flex; 
+            justify-content: center;
+            padding: 5px;
         }
+
+        canvas {
+            background: linear-gradient(to bottom, #87CEEB 0%, #fecfef 100%);
+            border: 4px solid #333; border-radius: 8px;
+            width: 100%; 
+            height: auto;
+            aspect-ratio: 2 / 1; /* Skala 2:1 biar nggak gepeng */
+            image-rendering: pixelated; 
+            display: block;
+        }
+
+        /* Panel Kontrol */
         #controls {
             width: 100%; max-width: 600px;
             display: flex; justify-content: space-between;
-            padding: 0 20px; box-sizing: border-box;
+            padding: 0 15px; 
             margin-top: 15px; z-index: 10;
         }
         .dpad { display: flex; gap: 10px; }
+        
         .btn {
             background-color: #444; color: white;
             border: 3px solid #111; border-radius: 12px;
-            width: 65px; height: 65px; font-size: 24px;
+            width: 60px; height: 60px; font-size: 24px;
             display: flex; align-items: center; justify-content: center;
-            box-shadow: 0 6px 0 #111; cursor: pointer;
+            box-shadow: 0 5px 0 #111; cursor: pointer;
         }
-        .btn:active { transform: translateY(6px); box-shadow: 0 0 0 #111; }
-        #btnJump { background-color: #e74c3c; width: 100px; font-size: 16px; font-weight: bold; }
+        .btn:active { transform: translateY(5px); box-shadow: 0 0 0 #111; }
+        #btnJump { 
+            background-color: #e74c3c; 
+            width: 100px; 
+            font-size: 16px; 
+            font-weight: bold; 
+        }
+
+        /* Tombol Restart */
         #btnRestart {
-            display: none; position: absolute; top: 55%;
+            display: none; position: absolute; top: 50%;
             left: 50%; transform: translate(-50%, -50%);
             background-color: #f1c40f; color: #000;
             border: 3px solid #333; border-radius: 10px;
-            padding: 10px 20px; font-weight: bold; font-size: 18px;
+            padding: 10px 20px; font-weight: bold; font-size: 16px;
             box-shadow: 0 5px 0 #999; cursor: pointer; z-index: 20;
         }
         #btnRestart:active { transform: translate(-50%, -45%); box-shadow: 0 0 0 #999; }
@@ -70,7 +95,7 @@
 
         // Fisika & Konstanta
         const GRAVITY = 0.5;
-        const JUMP_POWER = -10.5; // Ketinggian pas
+        const JUMP_POWER = -10.5;
         const BASE_SPEED = 3;
         const GROUND_Y = 260;
         
@@ -113,7 +138,6 @@
             
             document.getElementById("btnRestart").style.display = "none";
             
-            // Map Awal yang aman
             platforms = [{ x: -100, y: GROUND_Y, w: 600, h: 40, type: 'ground' }];
             enemies = [];
             coins = [];
@@ -124,18 +148,15 @@
         function spawnMap() {
             let lastP = platforms[platforms.length - 1];
             
-            // Selama map belum memenuhi layar ke kanan, terus bikin
             while (lastP.x + lastP.w < cameraX + canvas.width + 600) {
-                let gap = Math.random() * 60 + 50; // Jarak jurang maksimal 110px (Aman untuk lompat)
+                let gap = Math.random() * 60 + 50; 
                 let nextX = lastP.x + lastP.w + gap;
-                let pWidth = Math.random() * 200 + 200; // Panjang tanah
+                let pWidth = Math.random() * 200 + 200; 
 
-                // 1. Bikin Tanah Utama
                 platforms.push({ x: nextX, y: GROUND_Y, w: pWidth, h: 40, type: 'ground' });
 
-                // 2. Bikin Platform Melayang (Mario Style)
                 if (Math.random() < 0.7) {
-                    let numBricks = Math.floor(Math.random() * 3) + 1; // 1 sampai 3 bata
+                    let numBricks = Math.floor(Math.random() * 3) + 1; 
                     let brickX = nextX + 50;
                     for (let i = 0; i < numBricks; i++) {
                         platforms.push({ x: brickX + (i * 40), y: GROUND_Y - 100, w: 40, h: 15, type: 'brick' });
@@ -143,18 +164,16 @@
                     }
                 }
 
-                // 3. Bikin Musuh (Goomba) yang Pinter
                 if (Math.random() < 0.7) {
                     enemies.push({ 
                         x: nextX + 50, 
                         y: GROUND_Y - 24, 
                         w: 24, h: 24, 
-                        vx: -1, // Jalan ke kiri
+                        vx: -1, 
                         dead: false 
                     });
                 }
 
-                // 4. Koin di tanah
                 if (Math.random() < 0.5) {
                     coins.push({ x: nextX + pWidth - 50, y: GROUND_Y - 30, r: 8, taken: false });
                 }
@@ -170,13 +189,11 @@
             frames++;
             if (player.invulnerable > 0) player.invulnerable--;
 
-            // Gerak
             player.vx = 0;
             if (keys.left) player.vx = -BASE_SPEED;
             if (keys.right) player.vx = BASE_SPEED;
             player.vy += GRAVITY;
             
-            // Tabrakan X
             player.x += player.vx;
             for (let p of platforms) {
                 if (checkCollide(player, p)) {
@@ -185,7 +202,6 @@
                 }
             }
 
-            // Tabrakan Y
             player.y += player.vy;
             player.grounded = false;
             for (let p of platforms) {
@@ -201,42 +217,32 @@
                 }
             }
 
-            // Lompat
             if (keys.jump && player.grounded) {
                 player.vy = JUMP_POWER;
                 keys.jump = false;
             }
 
-            // Kamera (Ngikutin player)
             if (player.x > canvas.width / 3) cameraX = player.x - canvas.width / 3;
-            if (player.x < 50) player.x = 50; // Nggak bisa mundur keluar layar
+            if (player.x < 50) player.x = 50; 
 
-            // Jatuh ke jurang
             if (player.y > canvas.height + 50) takeDamage(true);
 
-            // --- LOGIKA AI MUSUH (BIAR NGGAK JATUH) ---
             enemies.forEach(e => {
                 if (e.dead) return;
                 
-                // Cek ujung platform di depan musuh
                 let nextX = e.vx > 0 ? e.x + e.w + 5 : e.x - 5;
                 let hasGroundAhead = false;
                 
                 for (let p of platforms) {
-                    // Kalau ada tanah di depan, berarti aman
                     if (nextX > p.x && nextX < p.x + p.w && e.y + e.h >= p.y && e.y + e.h <= p.y + 10) {
                         hasGroundAhead = true; break;
                     }
                 }
 
-                // Kalau di depan ada jurang atau nabrak tembok, berbalik arah
                 if (!hasGroundAhead) e.vx *= -1;
-                
                 e.x += e.vx;
 
-                // Tabrakan Player vs Musuh
                 if (checkCollide(player, e) && player.invulnerable <= 0) {
-                    // Kalau diinjak dari atas
                     if (player.vy > 0 && player.y + player.h < e.y + 15) {
                         e.dead = true;
                         player.vy = -8;
@@ -247,14 +253,12 @@
                 }
             });
 
-            // Koin
             coins.forEach(c => {
                 if (!c.taken && checkCollide(player, {x: c.x, y: c.y, w: c.r*2, h: c.r*2})) {
                     c.taken = true; score += 5;
                 }
             });
 
-            // Generate Map Baru & Bersihin yang udah lewat
             spawnMap();
             platforms = platforms.filter(p => p.x + p.w > cameraX - 200);
             enemies = enemies.filter(e => e.x > cameraX - 200);
@@ -271,7 +275,7 @@
         function takeDamage(fall = false) {
             if (player.invulnerable > 0 || gameOver) return;
             hp--;
-            player.invulnerable = 90; // Kebal 1.5 detik
+            player.invulnerable = 90;
 
             if (hp <= 0) {
                 gameOver = true;
@@ -281,10 +285,10 @@
             }
 
             if (fall) {
-                player.x = cameraX + 50; // Respawn agak ke belakang
+                player.x = cameraX + 50; 
                 player.y = 0; player.vy = 0;
             } else {
-                player.vy = -5; player.vx = -5; // Mental
+                player.vy = -5; player.vx = -5; 
             }
         }
 
@@ -293,23 +297,19 @@
             ctx.save();
             ctx.translate(-cameraX, 0); 
 
-            // Gambar Platform
             platforms.forEach(p => {
                 if (p.type === 'ground') {
                     ctx.fillStyle = "#8b4513"; ctx.fillRect(p.x, p.y, p.w, p.h);
                     ctx.fillStyle = "#228b22"; ctx.fillRect(p.x, p.y, p.w, 8);
-                    // Pola tanah
                     ctx.fillStyle = "#5c2e0b";
                     for(let i=0; i<p.w; i+=20) ctx.fillRect(p.x+i, p.y+15, 10, 10);
                 } else {
                     ctx.fillStyle = "#cd853f"; ctx.fillRect(p.x, p.y, p.w, p.h);
                     ctx.strokeStyle = "#333"; ctx.lineWidth = 2; ctx.strokeRect(p.x, p.y, p.w, p.h);
-                    // Pola bata
                     ctx.fillStyle = "rgba(0,0,0,0.2)"; ctx.fillRect(p.x, p.y + p.h/2, p.w, 2);
                 }
             });
 
-            // Gambar Koin
             coins.forEach(c => {
                 if (!c.taken) {
                     ctx.fillStyle = "#ffd700"; ctx.beginPath();
@@ -318,21 +318,18 @@
                 }
             });
 
-            // Gambar Musuh (Jamur Goomba)
             enemies.forEach(e => {
                 if (!e.dead) {
-                    ctx.fillStyle = "#d35400"; // Merah bata
-                    ctx.beginPath(); ctx.arc(e.x + e.w/2, e.y + e.h/2, e.w/2, Math.PI, 0); ctx.fill(); // Kepala
-                    ctx.fillRect(e.x, e.y + e.h/2, e.w, e.h/2); // Badan bawah
-                    ctx.fillStyle = "#f5deb3"; // Krem
-                    ctx.fillRect(e.x + 4, e.y + e.h/2 + 2, 16, 10); // Wajah
-                    // Mata
+                    ctx.fillStyle = "#d35400"; 
+                    ctx.beginPath(); ctx.arc(e.x + e.w/2, e.y + e.h/2, e.w/2, Math.PI, 0); ctx.fill(); 
+                    ctx.fillRect(e.x, e.y + e.h/2, e.w, e.h/2); 
+                    ctx.fillStyle = "#f5deb3"; 
+                    ctx.fillRect(e.x + 4, e.y + e.h/2 + 2, 16, 10); 
                     ctx.fillStyle = "#000";
                     ctx.fillRect(e.x + 6, e.y + 10, 4, 6); ctx.fillRect(e.x + 14, e.y + 10, 4, 6);
                 }
             });
 
-            // Gambar Kelinci
             if (player.invulnerable % 10 < 5 || player.invulnerable === 0) {
                 ctx.fillStyle = "#ffffff"; ctx.fillRect(player.x, player.y, player.w, player.h);
                 ctx.fillRect(player.x + 4, player.y - 10, 6, 10);
@@ -346,7 +343,6 @@
             }
             ctx.restore();
 
-            // UI
             ctx.fillStyle = "#fff"; ctx.font = "bold 20px 'Courier New'";
             ctx.fillText("SKOR: " + score, 20, 30);
             for (let i = 0; i < hp; i++) {
